@@ -3,22 +3,23 @@ from typing import Self
 
 
 class Element:
-    _elements: dict[tuple, Self] = {}
+    _elements: dict[set, Self] = {}
 
     @staticmethod
     def __new__(cls, point1: int, point2: int, *args) -> None:
-        new_key = (cls.__point_checker(point1), cls.__point_checker(point2))
+        new_key = frozenset({cls.__point_checker(point1), cls.__point_checker(point2)})
+        if len(new_key) == 1:
+            raise ValueError('Номера точек не могут быть одинаковыми!')
         if new_key not in Element._elements.keys():
             cls._elements[new_key] = super(Element, cls).__new__(cls)
         else:
             print('К указаным точкам уже привязан элемент! Удалите его, прежде чем прикреплять новый!')
         return cls._elements[new_key]
-        
 
     @abstractmethod
     def __init__(self, point1: int, point2: int, name: str) -> None:
-        self.__point1 = point1
-        self.__point2 = point2
+        self.point1 = point1
+        self.point2 = point2
         self._name = name
 
     @staticmethod
@@ -49,12 +50,19 @@ class Element:
     def point2(self, new_point) -> None:
         self.__point2 = self.__point_checker(new_point)
 
+    def get_points(self) -> tuple:
+        return (self.__point1, self.__point2)
+
+    @property
+    def name(self) -> str:
+        return self._name
+
 
 class Resistor(Element):
     _global_name = 'Резистор'
     def __init__(self, point1: int, point2: int, name: str, resistance: float) -> None:
         super().__init__(point1, point2, f'R_{name}')
-        self._resistance = resistance
+        self.resistance = resistance
 
     @property
     def resistance(self) -> float:
@@ -73,7 +81,7 @@ class ElectromotiveForce(Element): #TODO: направление источни�
     _global_name = 'Источник ЭДС'
     def __init__(self, point1: int, point2: int, name: str, voltage: float) -> None:
         super().__init__(point1, point2, f'J_{name}')
-        self._voltage = voltage
+        self.voltage = voltage
 
     @property
     def voltage(self) -> float:
@@ -87,11 +95,12 @@ class ElectromotiveForce(Element): #TODO: направление источни�
             raise ValueError('Значение ЭДС не должно быть равно нулю!')
         self._voltage = new_voltage
 
+
 class CurrentSource(Element): #TODO: направление источника
     _global_name = 'Источник тока'
     def __init__(self, point1: int, point2: int, name: str, current: float) -> None:
         super().__init__(point1, point2, f'I_{name}')
-        self._current = current
+        self.current = current
 
     @property
     def current(self) -> float:
