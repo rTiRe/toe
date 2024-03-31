@@ -1,17 +1,22 @@
-from networkx import Graph, DiGraph, simple_cycles
-
-from elements import Element, Resistor, ElectromotiveForce, CurrentSource, Wire
+from networkx import Graph, simple_cycles
+from elements import Element
 
 class Circuit:
     def __init__(self) -> None:
         self.__points = Graph()
-        self.__elements = Element()
+        self.__elements = Element._elements
+        self.__mashes = list() # Порядок точек контура = направление контурного тока.
 
     def add_element(self) -> None:
-        Resistor(1, 2, '1', 220)
-        print(self.__elements.__elements)
+        points = list(self.__elements)[-1]
+        self.__points.add_edge(points[0], points[1])
+        self.find_mashes()
 
+    def get_points(self) -> Graph:
+        return self.__points.nodes
 
+    def find_mashes(self) -> None:
+        self.__mashes = list(simple_cycles(self.__points))
 
-
-# print(list(simple_cycles(Circuit)))
+    def get_mashes(self) -> list:
+        return self.__mashes

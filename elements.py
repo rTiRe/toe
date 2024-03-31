@@ -1,22 +1,52 @@
-from abc import abstractmethod, ABC
+from abc import abstractmethod
+from typing import Self
 
-@ABC
+
 class Element:
-    __elements: dict[tuple, 'Element'] = dict()
+    _elements: dict[tuple, Self] = {}
 
-    def __new__(cls, point1: int, point2: int, name: str) -> None:
-        if (point1, point2) not in cls.__elements:
-            cls.__elements[(point1, point2)] = name
+    @staticmethod
+    def __new__(cls, point1: int, point2: int, *args) -> None:
+        new_key = (int(point1), int(point2))
+        if new_key not in Element._elements.keys():
+            cls._elements[new_key] = super().__new__(cls)
+        return cls._elements[new_key]
         
 
     @abstractmethod
     def __init__(self, point1: int, point2: int, name: str) -> None:
-        Element.__elements[(point1, point2)] = self
+        self.__point1 = point1
+        self.__point2 = point2
         #TODO: что если зададут уже указанные точки?
         self._name = name
 
+    @property
+    def point1(self) -> int:
+        return self.__point1
+
+    @point1.setter
+    def point1(self, new_point) -> None:
+        if not isinstance(new_point, (int, float, str)):
+            raise TypeError('Точка должна быть int или типом, преобразуемым к int (float, str)')
+        if new_point < 1:
+            raise ValueError('Значение не может быть меньше 1!')
+        self.__point1 = int(new_point)
+
+    @property
+    def point2(self) -> int:
+        return self.__point2
+
+    @point2.setter
+    def point2(self, new_point) -> None:
+        if not isinstance(new_point, (int, float, str)):
+            raise TypeError('Точка должна быть int или типом, преобразуемым к int (float, str)')
+        if new_point < 1:
+            raise ValueError('Значение не может быть меньше 1!')
+        self.__point2 = int(new_point)
+
 
 class Resistor(Element):
+    _global_name = 'Резистор'
     def __init__(self, point1: int, point2: int, name: str, resistance: float) -> None:
         super().__init__(point1, point2, f'R_{name}')
         self._resistance = resistance
@@ -34,7 +64,8 @@ class Resistor(Element):
         self._resistance = new_resistance
 
 
-class ElectromotiveForce(Element):
+class ElectromotiveForce(Element): #TODO: направление источника
+    _global_name = 'Источник ЭДС'
     def __init__(self, point1: int, point2: int, name: str, voltage: float) -> None:
         super().__init__(point1, point2, f'J_{name}')
         self._voltage = voltage
@@ -51,7 +82,8 @@ class ElectromotiveForce(Element):
             raise ValueError('Значение ЭДС не должно быть равно нулю!')
         self._voltage = new_voltage
 
-class CurrentSource(Element):
+class CurrentSource(Element): #TODO: направление источника
+    _global_name = 'Источник тока'
     def __init__(self, point1: int, point2: int, name: str, current: float) -> None:
         super().__init__(point1, point2, f'I_{name}')
         self._current = current
@@ -70,5 +102,6 @@ class CurrentSource(Element):
 
 
 class Wire(Element):
+    _global_name = 'Провод'
     def __init__(self, point1: int, point2: int) -> None:
         super().__init__(point1, point2, 'Wire')
