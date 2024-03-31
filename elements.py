@@ -6,8 +6,8 @@ class Element:
     _elements: dict[set, Self] = {}
 
     @staticmethod
-    def __new__(cls, point1: int, point2: int, *args) -> None:
-        new_key = frozenset({cls.__point_checker(point1), cls.__point_checker(point2)})
+    def __new__(cls, node1: int, node2: int, *args) -> None:
+        new_key = frozenset({cls.__node_checker(node1), cls.__node_checker(node2)})
         if len(new_key) == 1:
             raise ValueError('Номера точек не могут быть одинаковыми!')
         if new_key not in Element._elements.keys():
@@ -17,41 +17,41 @@ class Element:
         return cls._elements[new_key]
 
     @abstractmethod
-    def __init__(self, point1: int, point2: int, name: str) -> None:
-        self.point1 = point1
-        self.point2 = point2
+    def __init__(self, node1: int, node2: int, name: str) -> None:
+        self.node1 = node1
+        self.node2 = node2
         self._name = name
 
     @staticmethod
-    def __point_checker(point) -> int:
-        if not isinstance(point, (int, float, str)):
+    def __node_checker(node) -> int:
+        if not isinstance(node, (int, float, str)):
             raise TypeError('Точка должна быть int или типом, преобразуемым к int (float, str)')
         try:
-            point = int(point)
+            node = int(node)
         except ValueError:
-            raise ValueError(f'Невозможно преобразовать {point} к int')
-        if point < 1:
+            raise ValueError(f'Невозможно преобразовать {node} к int')
+        if node < 1:
             raise ValueError('Значение не может быть меньше 1!')
-        return point
+        return node
 
     @property
-    def point1(self) -> int:
-        return self.__point1
+    def node1(self) -> int:
+        return self.__node1
 
-    @point1.setter
-    def point1(self, new_point) -> None:
-        self.__point1 = self.__point_checker(new_point)
+    @node1.setter
+    def node1(self, new_node) -> None:
+        self.__node1 = self.__node_checker(new_node)
 
     @property
-    def point2(self) -> int:
-        return self.__point2
+    def node2(self) -> int:
+        return self.__node2
 
-    @point2.setter
-    def point2(self, new_point) -> None:
-        self.__point2 = self.__point_checker(new_point)
+    @node2.setter
+    def node2(self, new_node) -> None:
+        self.__node2 = self.__node_checker(new_node)
 
-    def get_points(self) -> tuple:
-        return (self.__point1, self.__point2)
+    def get_nodes(self) -> tuple:
+        return (self.__node1, self.__node2)
 
     @property
     def name(self) -> str:
@@ -60,8 +60,8 @@ class Element:
 
 class Resistor(Element):
     _global_name = 'Резистор'
-    def __init__(self, point1: int, point2: int, name: str, resistance: float) -> None:
-        super().__init__(point1, point2, f'R_{name}')
+    def __init__(self, node1: int, node2: int, name: str, resistance: float) -> None:
+        super().__init__(node1, node2, f'R_{name}')
         self.resistance = resistance
 
     @property
@@ -79,8 +79,8 @@ class Resistor(Element):
 
 class ElectromotiveForce(Element): #TODO: направление источника
     _global_name = 'Источник ЭДС'
-    def __init__(self, point1: int, point2: int, name: str, voltage: float) -> None:
-        super().__init__(point1, point2, f'J_{name}')
+    def __init__(self, node1: int, node2: int, name: str, voltage: float) -> None:
+        super().__init__(node1, node2, f'J_{name}')
         self.voltage = voltage
 
     @property
@@ -98,8 +98,8 @@ class ElectromotiveForce(Element): #TODO: направление источни�
 
 class CurrentSource(Element): #TODO: направление источника
     _global_name = 'Источник тока'
-    def __init__(self, point1: int, point2: int, name: str, current: float) -> None:
-        super().__init__(point1, point2, f'I_{name}')
+    def __init__(self, node1: int, node2: int, name: str, current: float) -> None:
+        super().__init__(node1, node2, f'I_{name}')
         self.current = current
 
     @property
@@ -117,5 +117,5 @@ class CurrentSource(Element): #TODO: направление источника
 
 class Wire(Element):
     _global_name = 'Провод'
-    def __init__(self, point1: int, point2: int) -> None:
-        super().__init__(point1, point2, 'Wire')
+    def __init__(self, node1: int, node2: int) -> None:
+        super().__init__(node1, node2, 'Wire')
