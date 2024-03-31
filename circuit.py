@@ -19,7 +19,7 @@ class Circuit:
         raw_mashes = list(simple_cycles(self.__graph))
         if not raw_mashes:
             return
-        self.__mashes.append(max(raw_mashes, key=len))
+        self.__mashes.append(tuple(max(raw_mashes, key=len)))
         for first_mash in raw_mashes:
             append = True
             for second_mash in raw_mashes:
@@ -29,7 +29,8 @@ class Circuit:
                     append = False
                     break
             if append:
-                self.__mashes.append(first_mash)
+                self.__mashes.append(tuple(first_mash))
+        self.__mashes = list(set(self.__mashes))
 
     def __find_nodes(self) -> None:
         for node in self.__graph.nodes:
