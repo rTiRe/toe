@@ -23,7 +23,7 @@ while True:
     element(*args)
     circuit.add_element()
 
-# print(Element._elements)
+# print(list(Element._elements.items())[0][1])
 # print(circuit.get_points())
 print()
 mashes = circuit.get_mashes()

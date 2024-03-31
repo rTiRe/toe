@@ -7,9 +7,11 @@ class Element:
 
     @staticmethod
     def __new__(cls, point1: int, point2: int, *args) -> None:
-        new_key = (int(point1), int(point2))
+        new_key = (cls.__point_checker(point1), cls.__point_checker(point2))
         if new_key not in Element._elements.keys():
-            cls._elements[new_key] = super().__new__(cls)
+            cls._elements[new_key] = super(Element, cls).__new__(cls)
+        else:
+            print('К указаным точкам уже привязан элемент! Удалите его, прежде чем прикреплять новый!')
         return cls._elements[new_key]
         
 
@@ -17,8 +19,19 @@ class Element:
     def __init__(self, point1: int, point2: int, name: str) -> None:
         self.__point1 = point1
         self.__point2 = point2
-        #TODO: что если зададут уже указанные точки?
         self._name = name
+
+    @staticmethod
+    def __point_checker(point) -> int:
+        if not isinstance(point, (int, float, str)):
+            raise TypeError('Точка должна быть int или типом, преобразуемым к int (float, str)')
+        try:
+            point = int(point)
+        except ValueError:
+            raise ValueError(f'Невозможно преобразовать {point} к int')
+        if point < 1:
+            raise ValueError('Значение не может быть меньше 1!')
+        return point
 
     @property
     def point1(self) -> int:
@@ -26,11 +39,7 @@ class Element:
 
     @point1.setter
     def point1(self, new_point) -> None:
-        if not isinstance(new_point, (int, float, str)):
-            raise TypeError('Точка должна быть int или типом, преобразуемым к int (float, str)')
-        if new_point < 1:
-            raise ValueError('Значение не может быть меньше 1!')
-        self.__point1 = int(new_point)
+        self.__point1 = self.__point_checker(new_point)
 
     @property
     def point2(self) -> int:
@@ -38,11 +47,7 @@ class Element:
 
     @point2.setter
     def point2(self, new_point) -> None:
-        if not isinstance(new_point, (int, float, str)):
-            raise TypeError('Точка должна быть int или типом, преобразуемым к int (float, str)')
-        if new_point < 1:
-            raise ValueError('Значение не может быть меньше 1!')
-        self.__point2 = int(new_point)
+        self.__point2 = self.__point_checker(new_point)
 
 
 class Resistor(Element):
