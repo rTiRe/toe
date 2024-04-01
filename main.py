@@ -40,5 +40,5 @@ if len(nodes) == 0:
 else:
     print('Найдены узлы:')
     for num, (node, connected_nodes) in enumerate(nodes.items()):
-        print(f'{num+1}. {node}: {connected_nodes}')
+        print(f'{num+1}. {node}: {[f"{sub_node}: {[str(element) for element in elements]}" for sub_node , elements in connected_nodes.items()]}')
 # print(circuit.get_element(2, 1).name, circuit.get_element(1, 2).get_nodes())

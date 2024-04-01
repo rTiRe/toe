@@ -3,7 +3,7 @@ from typing import Self
 
 
 class Element:
-    _elements: dict[set, Self] = {}
+    _elements: dict[frozenset, Self] = {}
 
     @staticmethod
     def __new__(cls, node1: int, node2: int, *args) -> None:
@@ -50,12 +50,15 @@ class Element:
     def node2(self, new_node) -> None:
         self.__node2 = self.__node_checker(new_node)
 
-    def get_nodes(self) -> tuple:
-        return (self.__node1, self.__node2)
+    def get_nodes(self) -> frozenset:
+        return frozenset({self.__node1, self.__node2})
 
     @property
     def name(self) -> str:
         return self._name
+
+    def __str__(self) -> None:
+        return f'{self.name} - {self.get_nodes()}'
 
 
 class Resistor(Element):
