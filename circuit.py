@@ -65,9 +65,6 @@ class Circuit:
                 sub_nodes[sub_node] = tuple(elements)
             self.__nodes[node] = sub_nodes
 
-
-
-
     def get_mashes(self) -> list:
         self.__find_mashes()
         return self.__mashes
