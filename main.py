@@ -30,9 +30,20 @@ mashes = circuit.get_mashes()
 if len(mashes) == 0:
     print('Контура не были найдены.')
 else:
-    print('Найдены контура:')
-    for num, mash in enumerate(mashes):
-        print(f'{num+1}. {mash}')
+    while True:
+        print()
+        print('Найдены контура:')
+        for num, mash in enumerate(mashes):
+            print(f'{num+1}. {mash}')
+        print()
+        print('Последовательность точек = направление тока в контуре')
+        mashes_to_reverse = input('Если нужно поменять направление в контурах, введите их через запятую [q для продолжения]: ').replace(' ', '').split(',')
+        if mashes_to_reverse[0] == 'q':
+            break
+        for mash in mashes_to_reverse:
+            circuit.reverse_mash(int(mash)-1)
+
+print()
 print()
 nodes = circuit.get_nodes()
 if len(nodes) == 0:

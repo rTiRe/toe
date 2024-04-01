@@ -69,6 +69,10 @@ class Circuit:
         self.__find_mashes()
         return self.__mashes
 
+    def reverse_mash(self, mash_index: int) -> None:
+        mash = self.__mashes[mash_index]
+        self.__mashes[mash_index] = tuple(reversed(mash))
+
     def get_nodes(self) -> list:
         self.__find_nodes()
         return self.__nodes
