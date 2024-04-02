@@ -1,4 +1,4 @@
-from elements import Element
+from elements import Element, Wire, CurrentSource
 from circuit import Circuit
 import inspect
 
@@ -16,7 +16,15 @@ while True:
     element_num = input('Ввод: ')
     if element_num == 'q':
         break
-    element = elements[int(element_num) - 1]
+    try:
+        element_num = int(element_num)
+    except ValueError:
+        print('Введите число!')
+        continue
+    if element_num > len(elements):
+        print('Такого элемента нет!')
+        continue
+    element = elements[element_num - 1]
     args = []
     for arg in inspect.getfullargspec(element)[0][1:]:
         args.append(input(f'Введите {arg}: '))
@@ -51,5 +59,5 @@ if len(nodes) == 0:
 else:
     print('Найдены узлы:')
     for num, (node, connected_nodes) in enumerate(nodes.items()):
-        print(f'{num+1}. {node}: {[f"{sub_node}: {[str(element) for element in elements]}" for sub_node , elements in connected_nodes.items()]}')
+        print(f'{num+1}. {node}: {[f"{sub_node}: {[str(element) for element in elements]}" for sub_node, elements in connected_nodes.items()]}')
 # print(circuit.get_element(2, 1).name, circuit.get_element(1, 2).get_nodes())
