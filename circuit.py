@@ -1,5 +1,5 @@
 from networkx import Graph, simple_cycles
-from elements import Element
+from elements import Element, Wire, Resistor
 from copy import deepcopy
 
 class Circuit:
@@ -8,6 +8,9 @@ class Circuit:
         self.__elements = Element._elements
         self.__mashes = list() # Порядок точек контура = направление контурного тока.
         self.__nodes = dict()
+
+    def get_graph(self) -> Graph:
+        return self.__graph
 
     def add_element(self) -> None:
         points = list(self.__elements)[-1]
@@ -73,7 +76,7 @@ class Circuit:
         mash = self.__mashes[mash_index]
         self.__mashes[mash_index] = tuple(reversed(mash))
 
-    def get_nodes(self) -> list:
+    def get_nodes(self) -> dict:
         self.__find_nodes()
         return self.__nodes
 
@@ -86,3 +89,22 @@ class Circuit:
             if node in key:
                 elements.append(self.__elements[frozenset({node, list(key - {node})[0]})])
         return tuple(elements)
+
+    def get_element_direction(self, main_node: int, element: Element, element_node: int) -> bool | None:
+        if len(self.__nodes) < 2:
+            return
+        if main_node not in self.__nodes.keys():
+            raise ValueError('Указанная основная точка - не узел!')
+        if isinstance(element, (Wire, Resistor)):
+            raise TypeError('Данный элемент не имеет направления!')
+        element_nodes = element.get_nodes()
+        if element_node not in element_nodes:
+            raise ValueError('Указанная точка не принадлежит данному элементу')
+        while True:
+            if element_node in list(self.__nodes):
+                if element_node == main_node:
+                    return True
+                return False
+            # print(element_node, self.get_elements(element_node))
+            element: Element = list(set(self.get_elements(element_node)) - {element})[0]
+            element_node = list(set(element.get_nodes()) - {element_node})[0]
