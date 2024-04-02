@@ -72,9 +72,13 @@ class Resistor(Element):
         return self._resistance
 
     @resistance.setter
-    def resistance(self, new_resistance: float) -> None:
-        if not isinstance(new_resistance, float):
-            raise TypeError(f'Значение сопротивления должно быть float, а не {type(new_resistance).__name__}')
+    def resistance(self, new_resistance: str | float | int) -> None:
+        if not isinstance(new_resistance, (str, float, int)):
+            raise TypeError(f'Значение сопротивления должно быть float или приводиться к нему, а не {type(new_resistance).__name__}')
+        try:
+            new_resistance = float(new_resistance)
+        except ValueError:
+            raise ValueError(f'Невозможно преобразовать сопротивление к float. (Не число!)')
         if new_resistance <= 0:
             raise ValueError('Значение сопротивления должно быть больше нуля!')
         self._resistance = new_resistance
@@ -91,9 +95,13 @@ class ElectromotiveForce(Element): #TODO: направление источни�
         return self._voltage
 
     @voltage.setter
-    def voltage(self, new_voltage: float) -> None:
-        if not isinstance(new_voltage, float):
-            raise TypeError(f'Значение ЭДС должно быть float, а не {type(new_voltage).__name__}')
+    def voltage(self, new_voltage: str | float | int) -> None:
+        if not isinstance(new_voltage, (str, float, int)):
+            raise TypeError(f'Значение ЭДС должно быть float или приводиться к нему, а не {type(new_voltage).__name__}')
+        try:
+            new_voltage = float(new_voltage)
+        except ValueError:
+            raise ValueError(f'Невозможно преобразовать напряжение к float. (Не число!)')
         if new_voltage == 0:
             raise ValueError('Значение ЭДС не должно быть равно нулю!')
         self._voltage = new_voltage
@@ -110,9 +118,13 @@ class CurrentSource(Element): #TODO: направление источника
         return self._current
 
     @current.setter
-    def current(self, new_current: float) -> None:
-        if not isinstance(new_current, float):
-            raise TypeError(f'Значение тока должно быть float, а не {type(new_current).__name__}')
+    def current(self, new_current: str | float | int) -> None:
+        if not isinstance(new_current, (str, float, int)):
+            raise TypeError(f'Значение тока должно быть float или приводиться к нему, а не {type(new_current).__name__}')
+        try:
+            new_current = float(new_current)
+        except ValueError:
+            raise ValueError(f'Невозможно преобразовать ток к float. (Не число!)')
         if new_current == 0:
             ValueError('Значение тока не должно быть равно нулю!')
         self._current = new_current
