@@ -87,7 +87,7 @@ class Resistor(Element):
 class ElectromotiveForce(Element): #TODO: направление источника
     _global_name = 'Источник ЭДС'
     def __init__(self, node1: int, node2: int, name: str, voltage: float) -> None:
-        super().__init__(node1, node2, f'J_{name}')
+        super().__init__(node1, node2, f'E_{name}')
         self.voltage = voltage
 
     @property
@@ -110,7 +110,7 @@ class ElectromotiveForce(Element): #TODO: направление источни�
 class CurrentSource(Element): #TODO: направление источника
     _global_name = 'Источник тока'
     def __init__(self, node1: int, node2: int, name: str, current: float) -> None:
-        super().__init__(node1, node2, f'I_{name}')
+        super().__init__(node1, node2, f'J_{name}')
         self.current = current
 
     @property
