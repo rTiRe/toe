@@ -2,6 +2,7 @@ from elements import Element, Wire, CurrentSource, ElectromotiveForce, Resistor
 from circuit import Circuit
 from circuit_parser import parser
 import inspect
+import numpy
 
 print('Приветствуем!')
 print('Схему предстоит вводить ручками и постепенно :(')
@@ -40,23 +41,24 @@ while hand_make:
 
 # print(list(Element._elements.items())[0][1])
 # print(circuit.get_points())
-print()
-mashes = circuit.get_mashes()
-if len(mashes) == 0:
-    print('Контура не были найдены.')
-else:
-    while True:
-        print()
-        print('Найдены контура:')
-        for num, mash in enumerate(mashes):
-            print(f'{num+1}. {mash}')
-        print()
-        print('Последовательность точек = направление тока в контуре')
-        mashes_to_reverse = input('Если нужно поменять направление в контурах, введите их через запятую [q для продолжения]: ').replace(' ', '').split(',')
-        if mashes_to_reverse[0] == 'q':
-            break
-        for mash in mashes_to_reverse:
-            circuit.reverse_mash(int(mash)-1)
+
+# print()
+# mashes = circuit.get_mashes()
+# if len(mashes) == 0:
+#     print('Контура не были найдены.')
+# else:
+#     while True:
+#         print()
+#         print('Найдены контура:')
+#         for num, mash in enumerate(mashes):
+#             print(f'{num+1}. {mash}')
+#         print()
+#         print('Последовательность точек = направление тока в контуре')
+#         mashes_to_reverse = input('Если нужно поменять направление в контурах, введите их через запятую [q для продолжения]: ').replace(' ', '').split(',')
+#         if mashes_to_reverse[0] == 'q':
+#             break
+#         for mash in mashes_to_reverse:
+#             circuit.reverse_mash(int(mash)-1)
 
 print()
 print()
@@ -124,10 +126,11 @@ for node, connected_nodes in circuit.find_nodes_with_element(element_class).item
         for element in elements:
             g += (1 / element.resistance)
             node_g += (1 / element.resistance)
-        sum_neightbours_g[node][sub_node] = [node_g, -node_g]
+        sum_neightbours_g[node][sub_node] = [node_g, -node_g, False]
         sum_e[node] = node_g # TODO
         if phi[sub_node] != None:
             sum_neightbours_g[node][sub_node][1] *= phi[sub_node]
+            sum_neightbours_g[node][sub_node][2] = True
     sum_g[node] = g
 
 element_class = ElectromotiveForce
@@ -163,3 +166,43 @@ print(sum_g) # Сумма все проводимостей элементов, 
 print(sum_neightbours_g) # Сумма проводимостей на ветке между каждым узлом, с которым связан наш узел
 print(sum_e) # Мб неверно. Сумма всех эдс, умноженых на проводимость, соединенных с узлом
 print(sum_j) # Сумма всех источников тока, соединенных с узлом
+
+lefts = [[0 for _ in range(len(circuit.get_graph().nodes))] for _ in range(len(circuit.get_graph().nodes))]
+rights = [0 for _ in range(len(circuit.get_graph().nodes))]
+
+for key, value in sum_j.items():
+    rights[key-1] += value
+for key, value in sum_e.items():
+    for sub_value in value.values():
+        rights[key-1] += sub_value
+for key, value in sum_g.items():
+    left = lefts[key-1]
+    left[key-1] = value
+    lefts[key-1] = left
+for key, value in sum_neightbours_g.items():
+    left = lefts[key-1]
+    for sub_key, sub_value in value.items():
+        if not sub_value[2]:
+            lefts[key-1][sub_key-1] = sub_value[1]
+        else:
+            rights[key-1] -= sub_value[1]
+print('lefts', lefts)
+print('rights', rights)
+
+m = []
+v = []
+not_listed = []
+for id in range(len(lefts)):
+    pre_m = []
+    if not all(v == 0 for v in lefts[id]):
+        for sub_id in range(len(lefts[id])):
+            if sub_id+1 in list(phi.keys()):
+                pre_m.append(lefts[id][sub_id])
+        m.append(pre_m)
+        v.append(rights[id])
+print(m)
+print(v)
+
+M = numpy.array(m)
+V = numpy.array(v)
+print(numpy.linalg.lstsq(M, V, rcond=None)[0])

@@ -1,9 +1,8 @@
 from abc import abstractmethod
-from typing import Self
 
 
 class Element:
-    _elements: dict[frozenset, Self] = {}
+    _elements: dict[frozenset, 'Element'] = {}
 
     @staticmethod
     def __new__(cls, node1: int, node2: int, *args) -> None:
