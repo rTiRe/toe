@@ -6,7 +6,7 @@ elements_classes = {
     'ElectromotiveForce': ElectromotiveForce,
     'CurrentSource': CurrentSource,
     'Wire': Wire,
-}
+}   
 
 def parser(file_path: str, circuit: Circuit) -> None:
     file = open(file_path, 'r', encoding='utf-8')
