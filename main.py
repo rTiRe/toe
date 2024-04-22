@@ -5,8 +5,8 @@ import inspect
 import numpy
 
 print('Приветствуем!')
-print('Схему предстоит вводить ручками и постепенно :(')
-print('Должен допилить.')
+# print('Схему предстоит вводить ручками и постепенно :(')
+# print('Должен допилить.')
 
 circuit = Circuit()
 hand_make = False
@@ -113,7 +113,7 @@ sum_g = {}
 sum_neightbours_g: dict[int, dict[int, list[float, float]]] = {}
 sum_e = {} # TODO
 sum_j = {}
-# Пока только резистор, потом сделаем конденсатор
+# TODO Пока только резистор, потом сделаем конденсатор
 element_class = Resistor
 for node, connected_nodes in circuit.find_nodes_with_element(element_class).items():
     if phi[node] != None:
