@@ -205,4 +205,8 @@ print(v)
 
 M = numpy.array(m)
 V = numpy.array(v)
-print(numpy.linalg.lstsq(M, V, rcond=None)[0])
+result = numpy.linalg.lstsq(M, V, rcond=None)[0]
+for id, key in enumerate(list(phi.keys())):
+    if phi[key] == None:
+        phi[key] = result[id]
+print(phi)
