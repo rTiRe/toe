@@ -91,6 +91,7 @@ class Circuit:
         return tuple(elements)
 
     def get_element_direction(self, main_node: int, element: Element, element_node: int) -> bool | None:
+        """True если направлено от main_node"""
         if len(self.__nodes) < 2:
             return
         if main_node not in self.__nodes.keys():
@@ -108,3 +109,17 @@ class Circuit:
             # print(element_node, self.get_elements(element_node))
             element: Element = list(set(self.get_elements(element_node)) - {element})[0]
             element_node = list(set(element.get_nodes()) - {element_node})[0]
+
+    def find_nodes_with_element(self, element_class: type) -> dict[int, dict[int, tuple[Element]]]:
+        nodes = dict()
+        if not issubclass(element_class, Element):
+            raise TypeError(f'{type(element_class).__name__} не Element!')
+        if not  isinstance(element_class, type):
+            raise TypeError(f'{element_class} не класс!')
+        for node, connected_nodes in self.get_nodes().items():
+            sub_nodes = dict()
+            for sub_node, elements in connected_nodes.items():
+                if any(isinstance(element, element_class) for element in elements):
+                    sub_nodes[sub_node] = elements
+            nodes[node] = sub_nodes
+        return nodes
