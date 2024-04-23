@@ -14,3 +14,5 @@ python3 main.py
 
 - [ ] Проверить работу с комплексными числами
 - [ ] Добавить поддержку конденсаторов
+
+![rTiRe](https://rtire.pythonanywhere.com/rtire)
