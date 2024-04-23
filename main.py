@@ -104,14 +104,14 @@ if positive_directions:
 else:
     phi[list(nodes.keys())[0]] = 0
 if len(list(set(positive_directions) | set(negative_directions))) > 2: # Два потому что 1 в + направлении и один в -
-    # С двумя считать пока не умеем.
+    # С более чем одним считать пока не умеем.
     raise ValueError('Источник тока без других элементов на ветке должен быть один на всю цепь!')
 print(f'phi: {phi}')
 
 
 sum_g = {}
 sum_neightbours_g: dict[int, dict[int, list[float, float]]] = {}
-sum_e = {} # TODO
+sum_e = {}
 sum_j = {}
 # TODO Пока только резистор, потом сделаем конденсатор
 element_class = Resistor
