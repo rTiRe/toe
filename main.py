@@ -1,212 +1,259 @@
-from elements import Element, Wire, CurrentSource, ElectromotiveForce, Resistor
-from circuit import Circuit
-from circuit_parser import parser
-import inspect
 import numpy
+import networkx as nx
 
-print('Приветствуем!')
-# print('Схему предстоит вводить ручками и постепенно :(')
-# print('Должен допилить.')
 
-circuit = Circuit()
-hand_make = False
-
-file_path = input('Введите имя файла если хотите считать данные цепи с него [q для продолжения]: ')
-if file_path == 'q':
-    hand_make = True
-else:
-    parser(file_path, circuit)
-while hand_make:
-    print('\nВыберите номер элемента, который хотите добавить из списка ниже (q для продолжения):')
-    elements = Element.__subclasses__()
-    for num, element in enumerate(elements):
-        print(f'{num+1}. {element._global_name}')
-    element_num = input('Ввод: ')
-    if element_num == 'q':
-        break
-    try:
-        element_num = int(element_num)
-    except ValueError:
-        print('Введите число!')
-        continue
-    if element_num > len(elements):
-        print('Такого элемента нет!')
-        continue
-    element = elements[element_num - 1]
-    args = []
-    for arg in inspect.getfullargspec(element)[0][1:]:
-        args.append(input(f'Введите {arg}: '))
-    element(*args)
-    circuit.add_element()
-
-# print(list(Element._elements.items())[0][1])
-# print(circuit.get_points())
-
-# print()
-# mashes = circuit.get_mashes()
-# if len(mashes) == 0:
-#     print('Контура не были найдены.')
-# else:
-#     while True:
-#         print()
-#         print('Найдены контура:')
-#         for num, mash in enumerate(mashes):
-#             print(f'{num+1}. {mash}')
-#         print()
-#         print('Последовательность точек = направление тока в контуре')
-#         mashes_to_reverse = input('Если нужно поменять направление в контурах, введите их через запятую [q для продолжения]: ').replace(' ', '').split(',')
-#         if mashes_to_reverse[0] == 'q':
-#             break
-#         for mash in mashes_to_reverse:
-#             circuit.reverse_mash(int(mash)-1)
-
-print()
-print()
-nodes = circuit.get_nodes()
-if len(nodes) == 0:
-    print('Узлы не были найдены.')
-else:
-    print('Найдены узлы:')
-    for num, (node, connected_nodes) in enumerate(nodes.items()):
-        print(f'{num+1}. {node}: {[f"{sub_node}: {[str(element) for element in elements]}" for sub_node, elements in connected_nodes.items()]}')
-# print(circuit.get_element(2, 1).name, circuit.get_element(1, 2).get_nodes())
-
-phi = {node: None for node in nodes.keys()}
-
-#
-# СМОТРИМ НАПРАВЛЕНИЕ ElectromotiveForce ДЛЯ КАЖДОГО НАЙДЕНОГО,
-# ТОЛЬКО ЕСЛИ ОН ОДИН В ВЕТКЕ
-#
-element_class = ElectromotiveForce
-positive_directions = []
-negative_directions = []
-for node, connected_nodes in circuit.find_nodes_with_element(element_class).items():
-    for sub_node, elements in connected_nodes.items():
-        elements = list(filter(lambda x: not isinstance(x, Wire), elements))
-        if len(elements) == 1:
-            element: Element = elements[0]
-            # print(node, sub_node, element.name)
-            element_direction = circuit.get_element_direction(node, element, element.node1)
-            # print(node, element.name, element_direction)
-            if element_direction:
-                positive_directions.append((node, element))
+def read_elements(filename):
+    graph = nx.Graph()
+    with open(filename, 'r') as file:
+        for line in file:
+            parts = line.strip().split()
+            element_type = parts[0]
+            node1 = parts[1]
+            node2 = parts[2]
+            if element_type != "Wire":
+                element_name = parts[3]
+                element_value = float(parts[4])
+                graph.add_edge(node1, node2, from_node=node1, to_node=node2, type=element_type, name=element_name, value=element_value)
             else:
-                negative_directions.append((node, element))
-
-# Зануляем опорный элемент.
-# Если есть ветка, в которой только источник ЭДС, то
-# зануляем узел от которого он выходит и приравниваем к ЭДС узел в котрый он входит
-# Если такого нет - зануляем первый узел из известных
-if positive_directions:
-    phi[positive_directions[0][0]] = 0
-    negative_node = list(set(positive_directions[0][1].get_nodes()) - {positive_directions[0][0]})[0]
-    phi[negative_node] = positive_directions[0][1].voltage
-else:
-    phi[list(nodes.keys())[0]] = 0
-if len(list(set(positive_directions) | set(negative_directions))) > 2: # Два потому что 1 в + направлении и один в -
-    # С более чем одним считать пока не умеем.
-    raise ValueError('Источник тока без других элементов на ветке должен быть один на всю цепь!')
-print(f'phi: {phi}')
+                graph.add_edge(node1, node2, from_node=node1, to_node=node2, type=element_type)
+    return graph
 
 
-sum_g = {}
-sum_neightbours_g: dict[int, dict[int, list[float, float]]] = {}
-sum_e = {}
-sum_j = {}
-# TODO Пока только резистор, потом сделаем конденсатор
-element_class = Resistor
-for node, connected_nodes in circuit.find_nodes_with_element(element_class).items():
-    if phi[node] != None:
+def find_nodes(graph):
+    return [node for node in graph.nodes if graph.degree(node) >= 3]
+
+
+def simplify_graph(graph, nodes):
+    print(nodes)
+    simplified_graph = nx.MultiGraph()
+    # Добавляем узлы в упрощенный граф
+    for node in nodes:
+        simplified_graph.add_node(node)
+    # Для каждой пары узлов найдем все пути и определим, какие из них не проходят через другие узлы
+    for i in range(len(nodes)):
+        for j in range(i + 1, len(nodes)):
+            node1 = nodes[i]
+            node2 = nodes[j]
+            print(node1, node2)
+            all_paths = list(nx.all_simple_paths(graph, node1, node2))
+            print()
+            print(all_paths)
+            for path in all_paths:
+                if not (set(nodes) - {node1, node2}) & set(path[1:-1]):
+                    print(path)
+                    path_elements = []
+                    # Анализируем все ребра между последовательными точками в пути
+                    for k in range(len(path) - 1):
+                        current_node = path[k]
+                        next_node = path[k + 1]
+                        # Получаем данные о ребре между этими точками
+                        edge_data = graph.get_edge_data(current_node, next_node)
+                        if edge_data:
+                            element_data = {
+                                'from_node': edge_data['from_node'],
+                                'to_node': edge_data['to_node'],
+                                'type': edge_data['type'],
+                                'name': edge_data.get('name', None),
+                                'value': edge_data.get('value', None)
+                            }
+                            # Определение направления для источников тока и ЭДС
+                            if element_data['type'] in ['ElectromotiveForce', 'CurrentSource']:
+                                element_data['direction'] = (element_data['from_node'] == current_node and element_data['to_node'] == next_node)
+                            path_elements.append(element_data)
+                    # Если в пути между узлами есть элементы, сохраняем их в упрощенном графе
+                    if path_elements:
+                        print('pe', path_elements)
+                        simplified_graph.add_edge(node1, node2, elements=path_elements)
+    return simplified_graph
+
+
+def calculate_conductances(graph: nx.MultiGraph):
+    conductance_sum = {key: 0 for key in graph.nodes}
+    for node in graph.nodes():
+        total_conductance = 0
+        # Перебираем все ребра, соединенные с данным узлом
+        for neighbor in graph.neighbors(node):
+            for num in range(graph.number_of_edges(node, neighbor)):
+                edge_data = graph.get_edge_data(node, neighbor, num)
+                if 'elements' in edge_data:
+                    # Перебираем все элементы на пути между узлами
+                    for element in edge_data['elements']:
+                        if element['type'] == 'Resistor':
+                            # Добавляем проводимость резистора
+                            total_conductance += 1 / element['value']
+        # Сохраняем сумму проводимостей для узла
+        conductance_sum[node] += total_conductance
+    return conductance_sum
+
+
+def calculate_branch_conductances(graph):
+    branch_conductances = {}
+    for node in graph.nodes():
+        branch_conductances[node] = {}
+        # Перебираем всех соседей текущего узла
+        for neighbor in graph.neighbors(node):
+            total_conductance = 0
+            for num in range(graph.number_of_edges(node, neighbor)):
+                edge_data = graph.get_edge_data(node, neighbor, num)
+                if 'elements' in edge_data:
+                    # Перебираем все элементы на этом ребре
+                    for element in edge_data['elements']:
+                        if element['type'] == 'Resistor':
+                            total_conductance += 1 / element['value']
+                    # Записываем проводимость для данной ветви
+                    branch_conductances[node][neighbor] = total_conductance
+    return branch_conductances
+
+
+def calculate_emf_contribution(graph, branch_conductances):
+    emf_contributions = {}
+    for node in graph.nodes():
+        emf_sum = 0
+        # Перебираем всех соседей текущего узла
+        for neighbor in graph.neighbors(node):
+            for num in range(graph.number_of_edges(node, neighbor)):
+                edge_data = graph.get_edge_data(node, neighbor, num)
+                if 'elements' in edge_data:
+                    # Перебираем все элементы на этом ребре
+                    for element in edge_data['elements']:
+                        if element['type'] == 'ElectromotiveForce':
+                            if neighbor in emf_contributions.keys() and emf_contributions[neighbor] != 0:
+                                if element['direction']:  # True, если направление от node к neighbor
+                                    emf_value = element['value']
+                                else:
+                                    emf_value = -element['value']
+                            else:
+                                # Используем поле 'direction' для определения направления ЭДС
+                                if not element['direction']:  # True, если направление от node к neighbor
+                                    emf_value = element['value']
+                                else:
+                                    emf_value = -element['value']
+                            # Получаем проводимость для этой ветви
+                            branch_conductance = branch_conductances[node].get(neighbor, 0)
+                            # Умножаем проводимость на ЭДС и добавляем к сумме
+                            emf_sum += branch_conductance * emf_value
+        # Сохраняем сумму проводимостей умноженных на ЭДС для узла
+        emf_contributions[node] = emf_sum
+    return emf_contributions
+
+
+def calculate_current_sources_contribution(graph):
+    current_contributions = {}
+    for node in graph.nodes():
+        current_sum = 0
+        # Перебираем всех соседей текущего узла
+        for neighbor in graph.neighbors(node):
+            for num in range(graph.number_of_edges(node, neighbor)):
+                edge_data = graph.get_edge_data(node, neighbor, num)
+                if 'elements' in edge_data:
+                    # Перебираем все элементы на этом ребре
+                    for element in edge_data['elements']:
+                        if element['type'] == 'CurrentSource':
+                            # Определяем направление источника тока
+                            if neighbor in current_contributions.keys() and current_contributions[neighbor] != 0:
+                                if element['direction']:  # True, если направление от node к neighbor
+                                    current_value = element['value']
+                                else:
+                                    current_value = -element['value']
+                            else:
+                                # Используем поле 'direction' для определения направления ЭДС
+                                if not element['direction']:  # True, если направление от node к neighbor
+                                    current_value = element['value']
+                                else:
+                                    current_value = -element['value']
+                            # Суммируем токи, учитывая направление
+                            current_sum += current_value
+        # Сохраняем сумму токов для узла
+        current_contributions[node] = current_sum
+    return current_contributions
+
+
+def initialize_phi(graph):
+    phi = {node: None for node in graph.nodes()}
+    return phi
+
+
+def process_edf_branches(graph, phi):
+    edf_branches = []
+    # Ищем ветви, содержащие только источник ЭДС
+    for u, v, data in graph.edges(data=True):
+        if 'elements' in data and len(data['elements']) == 1 and data['elements'][0]['type'] == 'ElectromotiveForce':
+            edf_branches.append((u, v, data['elements'][0]['value']))
+
+    # Проверяем условия на количество таких ветвей
+    if len(edf_branches) > 1:
+        raise ValueError("Найдено более одной ветви с единственным источником ЭДС, неоднозначность в определении потенциалов")
+    elif len(edf_branches) == 1:
+        # Определяем направление ЭДС и устанавливаем потенциалы
+        u, v, value = edf_branches[0]
+        phi[u] = 0
+        phi[v] = value
+    elif len(edf_branches) == 0 and None in phi.values():
+        # Если нет ветвей с источником ЭДС, зануляем первый попавшийся узел
+        for node in phi:
+            if phi[node] is None:
+                phi[node] = 0
+                break
+    return phi
+
+
+# Замените 'path_to_your_file.txt' на путь к вашему файлу с данными
+filename = 'examples/circuit1'
+graph = read_elements(filename)
+nodes = find_nodes(graph)
+simplified_graph = simplify_graph(graph, nodes)
+for data in simplified_graph.edges(data=True):
+    print(data)
+print(simplified_graph.edges)
+print(simplified_graph.number_of_edges('5', '9'))
+print(simplified_graph.get_edge_data('5', '9', 0))
+conductances = calculate_conductances(simplified_graph)
+branch_conductances = calculate_branch_conductances(simplified_graph)
+emf_contribution = calculate_emf_contribution(simplified_graph, branch_conductances)
+current_sources_contribution = calculate_current_sources_contribution(simplified_graph)
+
+print(conductances)
+print()
+print(branch_conductances)
+print()
+print(emf_contribution)
+print()
+print(current_sources_contribution)
+
+phi = initialize_phi(simplified_graph)
+phi = process_edf_branches(simplified_graph, phi)
+print()
+print(phi)
+
+left = {key: {key: 0 for key in phi.keys()} for key in phi.keys()}
+right = {key: 0 for key in phi.keys()}
+
+left_to_right= []
+for node, value in phi.items():
+    if value != None:
         continue
-    sum_neightbours_g[node] = {}
-    g = 0
-    for sub_node, elements in connected_nodes.items():
-        elements = list(filter(lambda x: isinstance(x, element_class), elements))
-        node_g = 0
-        for element in elements:
-            g += (1 / element.resistance)
-            node_g += (1 / element.resistance)
-        sum_neightbours_g[node][sub_node] = [node_g, -node_g, False]
-        sum_e[node] = node_g # TODO
-        if phi[sub_node] != None:
-            sum_neightbours_g[node][sub_node][1] *= phi[sub_node]
-            sum_neightbours_g[node][sub_node][2] = True
-    sum_g[node] = g
+    sub_left = left[node]
+    sub_left[node] = conductances[node]
+    for branch_node, branch_value in branch_conductances[node].items():
+        if phi[branch_node] != None:
+            right[node] += (-branch_value * phi[branch_node])
+            continue
+        sub_left[branch_node] = -branch_value
+    left[node] = sub_left
+    right[node] += (emf_contribution[node] + current_sources_contribution[node])
+print(left)
+print(right)
 
-element_class = ElectromotiveForce
-for node, connected_nodes in circuit.find_nodes_with_element(element_class).items():
-    if phi[node] != None:
-        continue
-    sum_e[node] = {}
-    for sub_node, elements in connected_nodes.items():
-        elements = list(filter(lambda x: isinstance(x, element_class), elements))
-        sum_e[node][sub_node] = 0
-        for element in elements:
-            voltage = element.voltage
-            element_direction = circuit.get_element_direction(node, element, element.node1)
-            if element_direction:
-                voltage = -voltage
-            sum_e[node][sub_node] += voltage
-        sum_e[node][sub_node] *= sum_neightbours_g[node][sub_node][0]
-element_class = CurrentSource
-for node, connected_nodes in circuit.find_nodes_with_element(element_class).items():
-    if phi[node] != None:
-        continue
-    sum_j[node] = 0
-    for sub_node, elements in connected_nodes.items():
-        elements = list(filter(lambda x: isinstance(x, element_class), elements))
-        for element in elements: # TODO: Вроде верно, надо будет проверить
-            current = element.current
-            element_direction = circuit.get_element_direction(node, element, element.node1)
-            if element_direction:
-                current = -current
-            sum_j[node] += current
-
-print(sum_g) # Сумма все проводимостей элементов, с которыми свзяан узел
-print(sum_neightbours_g) # Сумма проводимостей на ветке между каждым узлом, с которым связан наш узел
-print(sum_e) # Мб неверно. Сумма всех эдс, умноженых на проводимость, соединенных с узлом
-print(sum_j) # Сумма всех источников тока, соединенных с узлом
-
-lefts = [[0 for _ in range(len(circuit.get_graph().nodes))] for _ in range(len(circuit.get_graph().nodes))]
-rights = [0 for _ in range(len(circuit.get_graph().nodes))]
-
-for key, value in sum_j.items():
-    rights[key-1] += value
-for key, value in sum_e.items():
-    for sub_value in value.values():
-        rights[key-1] += sub_value
-for key, value in sum_g.items():
-    left = lefts[key-1]
-    left[key-1] = value
-    lefts[key-1] = left
-for key, value in sum_neightbours_g.items():
-    left = lefts[key-1]
-    for sub_key, sub_value in value.items():
-        if not sub_value[2]:
-            lefts[key-1][sub_key-1] = sub_value[1]
-        else:
-            rights[key-1] -= sub_value[1]
-print('lefts', lefts)
-print('rights', rights)
-
-m = []
-v = []
-not_listed = []
-for id in range(len(lefts)):
-    pre_m = []
-    if not all(v == 0 for v in lefts[id]):
-        for sub_id in range(len(lefts[id])):
-            if sub_id+1 in list(phi.keys()):
-                pre_m.append(lefts[id][sub_id])
-        m.append(pre_m)
-        v.append(rights[id])
-print(m)
-print(v)
-
-M = numpy.array(m)
-V = numpy.array(v)
+M = numpy.array([list(value.values()) for value in left.values()])
+V = numpy.array([value for value in right.values()])
+print(M)
+print(V)
 result = numpy.linalg.lstsq(M, V, rcond=None)[0]
 for id, key in enumerate(list(phi.keys())):
     if phi[key] == None:
         phi[key] = result[id]
 print(phi)
+
+"""
+
+"""
