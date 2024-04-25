@@ -1,0 +1,12 @@
+Wire 1 2
+Wire 2 3
+Resistor 3 4 R1 5
+Resistor 4 5 R2 8
+Wire 5 6
+Wire 6 7
+Resistor 7 1 R3 10
+Wire 4 8
+ElectromotiveForce 9 2 EF1 12
+Resistor 8 9 R4 1
+Resistor 8 10 R5 1
+ElectromotiveForce 10 6 EF2 9
