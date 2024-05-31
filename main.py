@@ -28,7 +28,7 @@ def find_nodes(graph):
 
 
 def simplify_graph(graph, nodes):
-    print(nodes)
+    # print(nodes)
     simplified_graph = nx.MultiGraph()
     # Добавляем узлы в упрощенный граф
     for node in nodes:
@@ -38,13 +38,13 @@ def simplify_graph(graph, nodes):
         for j in range(i + 1, len(nodes)):
             node1 = nodes[i]
             node2 = nodes[j]
-            print(node1, node2)
+            # print(node1, node2)
             all_paths = list(nx.all_simple_paths(graph, node1, node2))
-            print()
-            print(all_paths)
+            # print()
+            # print(all_paths)
             for path in all_paths:
                 if not (set(nodes) - {node1, node2}) & set(path[1:-1]):
-                    print(path)
+                    # print(path)
                     path_elements = []
                     # Анализируем все ребра между последовательными точками в пути
                     for k in range(len(path) - 1):
@@ -66,7 +66,7 @@ def simplify_graph(graph, nodes):
                             path_elements.append(element_data)
                     # Если в пути между узлами есть элементы, сохраняем их в упрощенном графе
                     if path_elements:
-                        print('pe', path_elements)
+                        # print('pe', path_elements)
                         simplified_graph.add_edge(node1, node2, elements=path_elements)
     return simplified_graph
 
@@ -206,28 +206,28 @@ filename = 'examples/circuit1'
 graph = read_elements(filename)
 nodes = find_nodes(graph)
 simplified_graph = simplify_graph(graph, nodes)
-for data in simplified_graph.edges(data=True):
-    print(data)
-print(simplified_graph.edges)
-print(simplified_graph.number_of_edges('5', '9'))
-print(simplified_graph.get_edge_data('5', '9', 0))
+# for data in simplified_graph.edges(data=True):
+#     print(data)
+# print(simplified_graph.edges)
+# print(simplified_graph.number_of_edges('5', '9'))
+# print(simplified_graph.get_edge_data('5', '9', 0))
 conductances = calculate_conductances(simplified_graph)
 branch_conductances = calculate_branch_conductances(simplified_graph)
 emf_contribution = calculate_emf_contribution(simplified_graph, branch_conductances)
 current_sources_contribution = calculate_current_sources_contribution(simplified_graph)
 
-print(conductances)
-print()
-print(branch_conductances)
-print()
-print(emf_contribution)
-print()
-print(current_sources_contribution)
+# print(conductances)
+# print()
+# print(branch_conductances)
+# print()
+# print(emf_contribution)
+# print()
+# print(current_sources_contribution)
 
 phi = initialize_phi(simplified_graph)
 phi = process_edf_branches(simplified_graph, phi)
-print()
-print(phi)
+# print()
+# print(phi)
 
 left = {key: {key: 0 for key in phi.keys()} for key in phi.keys()}
 right = {key: 0 for key in phi.keys()}
@@ -245,19 +245,43 @@ for node, value in phi.items():
         sub_left[branch_node] = -branch_value
     left[node] = sub_left
     right[node] += (emf_contribution[node] + current_sources_contribution[node])
-print(left)
-print(right)
+# print(left)
+# print(right)
 
 M = numpy.array([list(value.values()) for value in left.values()])
 V = numpy.array([value for value in right.values()])
-print(M)
-print(V)
+# print(M)
+# print(V)
 result = numpy.linalg.lstsq(M, V, rcond=None)[0]
 for id, key in enumerate(list(phi.keys())):
     if phi[key] == None:
         phi[key] = result[id]
 print(phi)
 
-"""
+while True:
+    phi_input = input('phi\'s: ').split(' ')
+    # print(phi_input)
+    if phi_input[0] == 'exit':
+        break
+    first_phi, second_phi = phi_input
+    # print(first_phi, second_phi)
+    all_elements_between_two_nodes = simplified_graph.get_edge_data(first_phi, second_phi)
+    # print(simplified_graph.get_edge_data(first_phi, second_phi))
+    electromotive_force_for_i = 0
+    resistance_for_i = 0
+    for value in all_elements_between_two_nodes.values():
+        # print(value)
+        elem_group = value['elements']
+        for elem in elem_group:
+            if elem['type'] == 'ElectromotiveForce':
+                electromotive_force_direction = elem['direction']
+                if elem_group[0]['from_node'] != first_phi:
+                    electromotive_force_direction = not electromotive_force_direction
+                electromotive_force_for_i += elem['value'] if electromotive_force_direction else -elem['value']
+        resistance_for_i += sum([elem['value'] for elem in elem_group if elem['type'] == 'Resistor'])
+    # print(electromotive_force_for_i)
+    # print(resistance_for_i)
+    i = (phi[first_phi] - phi[second_phi] + electromotive_force_for_i)/resistance_for_i
+    print(i)
 
-"""
+# TODO хз как считаются токи для параллельных веток (выходят из одной точки и входят в одну точку)
