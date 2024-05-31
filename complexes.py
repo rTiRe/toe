@@ -15,8 +15,6 @@ def get_xC(omega: float, capacitance: float, only_real_part: bool = False) -> co
         return react_resistance.real
     return react_resistance
 
-print(get_xC(10**4, 10**-5))
-
 
 def get_xC(omega: float, inductance: float, only_real_part: bool = False) -> complex | int:
     """Calculator of the reactive resistance value for inductivity.
@@ -36,4 +34,3 @@ def get_xC(omega: float, inductance: float, only_real_part: bool = False) -> com
     return react_resistance
 
 
-print(get_xC(10**4, 10**-5))
