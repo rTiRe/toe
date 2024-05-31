@@ -1,5 +1,6 @@
 import numpy
 import networkx as nx
+import complexes
 
 
 def read_elements(filename):
@@ -12,6 +13,10 @@ def read_elements(filename):
             node2 = parts[2]
             if element_type != "Wire":
                 element_name = parts[3]
+                if element_name == 'Capacitor':
+                    element_value = complexes.get_xC(float(input('Omega value here: ')), element_type)
+                if element_name == 'Inductor':
+                    element_value = complexes.get_xL(float(input('Omega value here: ')), element_type)
                 element_value = float(parts[4])
                 graph.add_edge(node1, node2, from_node=node1, to_node=node2, type=element_type, name=element_name, value=element_value)
             else:

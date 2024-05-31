@@ -16,7 +16,7 @@ def get_xC(omega: float, capacitance: float, only_real_part: bool = False) -> co
     return react_resistance
 
 
-def get_xC(omega: float, inductance: float, only_real_part: bool = False) -> complex | int:
+def get_xL(omega: float, inductance: float, only_real_part: bool = False) -> complex | int:
     """Calculator of the reactive resistance value for inductivity.
 
     Args:
@@ -28,7 +28,7 @@ def get_xC(omega: float, inductance: float, only_real_part: bool = False) -> com
         complex | int: complex or real part of the reactive resistance
     """
     DEFAULT_J = complex(0, 1)
-    react_resistance = (1 / (omega * inductance)) * DEFAULT_J
+    react_resistance = ((omega * inductance)) * DEFAULT_J
     if only_real_part:
         return react_resistance.real
     return react_resistance
