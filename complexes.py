@@ -10,10 +10,10 @@ def get_xC(omega: float, capacitance: float, only_real_part: bool = False) -> co
         complex | int: complex or real part of the reactive resistance
     """
     DEFAULT_J = complex(0, 1)
-    react_resistance = ((omega * capacitance)) * DEFAULT_J
+    react_resistance = (1 / (omega * capacitance)) * DEFAULT_J
     if only_real_part:
         return react_resistance.real
-    return react_resistance
+    return -react_resistance
 
 
 def get_xL(omega: float, inductance: float, only_real_part: bool = False) -> complex | int:

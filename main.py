@@ -1,28 +1,6 @@
 import numpy
 import networkx as nx
-import complexes
-
-
-def read_elements(filename):
-    graph = nx.Graph()
-    with open(filename, 'r') as file:
-        for line in file:
-            parts = line.strip().split()
-            element_type = parts[0]
-            node1 = parts[1]
-            node2 = parts[2]
-            if element_type != "Wire":
-                element_name = parts[3]
-                if element_name == 'Capacitor':
-                    element_value = complexes.get_xC(float(input('Omega value here: ')), element_type)
-                if element_name == 'Inductor':
-                    element_value = complexes.get_xL(float(input('Omega value here: ')), element_type)
-                element_value = float(parts[4])
-                graph.add_edge(node1, node2, from_node=node1, to_node=node2, type=element_type, name=element_name, value=element_value)
-            else:
-                graph.add_edge(node1, node2, from_node=node1, to_node=node2, type=element_type)
-    return graph
-
+from reader import run_read
 
 def find_nodes(graph):
     return [node for node in graph.nodes if graph.degree(node) >= 3]
@@ -55,15 +33,15 @@ def simplify_graph(graph, nodes):
                         edge_data = graph.get_edge_data(current_node, next_node)
                         if edge_data:
                             element_data = {
-                                'from_node': edge_data['from_node'],
-                                'to_node': edge_data['to_node'],
+                                'u': edge_data['u'],
+                                'v': edge_data['v'],
                                 'type': edge_data['type'],
                                 'name': edge_data.get('name', None),
                                 'value': edge_data.get('value', None)
                             }
                             # Определение направления для источников тока и ЭДС
                             if element_data['type'] in ['ElectromotiveForce', 'CurrentSource']:
-                                element_data['direction'] = (element_data['from_node'] == current_node and element_data['to_node'] == next_node)
+                                element_data['direction'] = (element_data['u'] == current_node and element_data['v'] == next_node)
                             path_elements.append(element_data)
                     # Если в пути между узлами есть элементы, сохраняем их в упрощенном графе
                     if path_elements:
@@ -75,19 +53,25 @@ def simplify_graph(graph, nodes):
 def calculate_conductances(graph: nx.MultiGraph):
     conductance_sum = {key: 0 for key in graph.nodes}
     for node in graph.nodes():
-        total_conductance = 0
+        total_resistance = 0
         # Перебираем все ребра, соединенные с данным узлом
         for neighbor in graph.neighbors(node):
             for num in range(graph.number_of_edges(node, neighbor)):
                 edge_data = graph.get_edge_data(node, neighbor, num)
                 if 'elements' in edge_data:
+                    edge_elements = [element['type'] for element in edge_data['elements']]
+                    if 'CurrentSource' in edge_elements:
+                        continue
                     # Перебираем все элементы на пути между узлами
                     for element in edge_data['elements']:
-                        if element['type'] == 'Resistor':
+                        if element['type'] in ('Resistor', 'Inductor', 'Capacitor'):
+                            # print(neighbor, element)
                             # Добавляем проводимость резистора
-                            total_conductance += 1 / element['value']
+                            total_resistance += element['value']
         # Сохраняем сумму проводимостей для узла
-        conductance_sum[node] += total_conductance
+                # print('total', edge_data, total_resistance)
+        conductance_sum[node] += 1 / total_resistance
+    # print('sum', conductance_sum)
     return conductance_sum
 
 
@@ -103,7 +87,7 @@ def calculate_branch_conductances(graph):
                 if 'elements' in edge_data:
                     # Перебираем все элементы на этом ребре
                     for element in edge_data['elements']:
-                        if element['type'] == 'Resistor':
+                        if element['type'] in ('Resistor', 'Inductor', 'Capacitor'):
                             total_conductance += 1 / element['value']
                     # Записываем проводимость для данной ветви
                     branch_conductances[node][neighbor] = total_conductance
@@ -204,11 +188,11 @@ def process_edf_branches(graph, phi):
 
 # Замените 'path_to_your_file.txt' на путь к вашему файлу с данными
 filename = 'examples/circuit1'
-graph = read_elements(filename)
+graph = run_read(filename)
 nodes = find_nodes(graph)
 simplified_graph = simplify_graph(graph, nodes)
-# for data in simplified_graph.edges(data=True):
-#     print(data)
+for data in simplified_graph.edges(data=True):
+    print(data)
 # print(simplified_graph.edges)
 # print(simplified_graph.number_of_edges('5', '9'))
 # print(simplified_graph.get_edge_data('5', '9', 0))
@@ -217,8 +201,8 @@ branch_conductances = calculate_branch_conductances(simplified_graph)
 emf_contribution = calculate_emf_contribution(simplified_graph, branch_conductances)
 current_sources_contribution = calculate_current_sources_contribution(simplified_graph)
 
-# print(conductances)
-# print()
+print(conductances)
+print()
 # print(branch_conductances)
 # print()
 # print(emf_contribution)
@@ -233,7 +217,6 @@ phi = process_edf_branches(simplified_graph, phi)
 left = {key: {key: 0 for key in phi.keys()} for key in phi.keys()}
 right = {key: 0 for key in phi.keys()}
 
-left_to_right= []
 for node, value in phi.items():
     if value != None:
         continue
@@ -279,9 +262,12 @@ while True:
                 if elem_group[0]['from_node'] != first_phi:
                     electromotive_force_direction = not electromotive_force_direction
                 electromotive_force_for_i += elem['value'] if electromotive_force_direction else -elem['value']
-        resistance_for_i += sum([elem['value'] for elem in elem_group if elem['type'] == 'Resistor'])
-    # print(electromotive_force_for_i)
-    # print(resistance_for_i)
+        pre_resistance = sum([elem['value'] for elem in elem_group if elem['type'] in ('Resistor', 'Inductor', 'Capacitor')])
+        # print(pre_resistance)
+        if len(all_elements_between_two_nodes) > 1 and pre_resistance != 0:
+            pre_resistance = 1 / pre_resistance
+        resistance_for_i += pre_resistance
+    print(f'({phi[first_phi]} - {phi[second_phi]} + {electromotive_force_for_i}) / {resistance_for_i}')
     i = (phi[first_phi] - phi[second_phi] + electromotive_force_for_i)/resistance_for_i
     print(i)
 

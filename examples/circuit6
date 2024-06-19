@@ -1,0 +1,10 @@
+Resistor 1 2 R1 2
+CurrentSource 2 3 I1 2
+Wire 3 4
+Wire 4 5
+Resistor 5 6 R2 2
+Capacitor 6 7 C1 0.00005
+Wire 7 8
+Wire 8 1
+Inductor 4 9 L1 0.0002
+ElectromotiveForce 9 8 J1 4j
