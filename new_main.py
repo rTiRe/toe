@@ -1,27 +1,25 @@
-import numpy
-import networkx as nx
-from reader import run_read
-from graph_utils import simplify_graph
-from circuit_utils import calculate_circuit_data
-from node_potentials_utils import process_edf_branches
-from equation_utils import Equation
+"""Main file."""
 
-filename = 'examples/circuit2'
-graph = run_read(filename, 10000)
+from circuit_utils import calculate_circuit_data
+from equation_utils import Equation
+from graph_utils import simplify_graph
+from node_potentials_utils import process_edf_branches
+from reader import run_read
+
+DEFAULT_OMEGA = 10000
+
+filename = 'examples/circuit5'
+graph = run_read(filename, DEFAULT_OMEGA)
 simplified_graph = simplify_graph(graph)
 calculated_graph = calculate_circuit_data(simplified_graph)
-# for edge in calculated_graph.edges(data=True):
-#     print(edge)
-# for node in calculated_graph.nodes(data=True):
-#     print(node)
 phi = process_edf_branches(calculated_graph)
 
-eq = Equation(calculated_graph, phi)
-eq.calculate_left_part()
-eq.calculate_right_part()
-result = eq.calculate()
+equation = Equation(calculated_graph, phi)
+equation.calculate_left_part()
+equation.calculate_right_part()
+equation_result = equation.calculate()
 
-for id, key in enumerate(list(phi.keys())):
-    if phi[key] == None:
-        phi[key] = result[id]
+for key_number, key in enumerate(list(phi.keys())):
+    if phi[key] is None:
+        phi[key] = equation_result[key_number]
 print(phi)

@@ -1,6 +1,8 @@
-import numpy
 import networkx as nx
+import numpy
+
 from reader import run_read
+
 
 def find_nodes(graph):
     return [node for node in graph.nodes if graph.degree(node) >= 3]

@@ -1,5 +1,8 @@
-def get_xC(omega: float, capacitance: float, only_real_part: bool = False) -> complex | int:
-    """Calculator of the reactive resistance value for capacitor.
+"""Calculators for elements with reactive resistance."""
+
+
+def get_xc(omega: float, capacitance: float, only_real_part: bool = False) -> complex | int:
+    """Calculate the reactive resistance value for capacitor.
 
     Args:
         omega (float): angle acceleration value.
@@ -9,15 +12,15 @@ def get_xC(omega: float, capacitance: float, only_real_part: bool = False) -> co
     Returns:
         complex | int: complex or real part of the reactive resistance
     """
-    DEFAULT_J = complex(0, 1)
-    react_resistance = (1 / (omega * capacitance)) * DEFAULT_J
+    default_j = complex(0, 1)
+    react_resistance = (1 / (omega * capacitance)) * default_j
     if only_real_part:
         return react_resistance.real
     return -react_resistance
 
 
-def get_xL(omega: float, inductance: float, only_real_part: bool = False) -> complex | int:
-    """Calculator of the reactive resistance value for inductivity.
+def get_xl(omega: float, inductance: float, only_real_part: bool = False) -> complex | int:
+    """Calculate the reactive resistance value for inductivity.
 
     Args:
         omega (float): angle acceleration value.
@@ -27,10 +30,8 @@ def get_xL(omega: float, inductance: float, only_real_part: bool = False) -> com
     Returns:
         complex | int: complex or real part of the reactive resistance
     """
-    DEFAULT_J = complex(0, 1)
-    react_resistance = ((omega * inductance)) * DEFAULT_J
+    default_j = complex(0, 1)
+    react_resistance = ((omega * inductance)) * default_j
     if only_real_part:
         return react_resistance.real
     return react_resistance
-
-
